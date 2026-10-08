@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { contextFor, modeFromArgs, modeFromPrompt, statusText } from '../hooks/register'
+import { buttonLabel, contextFor, modeFromArgs, modeFromPrompt } from '../hooks/register'
 
 const BAND = { hasSurvey: false, isWorking: false, maxRows: 5 }
 
@@ -19,9 +19,8 @@ test('reads on/off phrases from prompts', () => {
   expect(modeFromPrompt('fix the bug')).toBe(undefined)
 })
 
-test('formats the status line and model context', () => {
-  expect(statusText('full')).toBe('🪨 full · /cave lite|full|ultra|off')
-  expect(statusText('off')).toBe('🪨 off · /cave to enable')
+test('formats the footer button and model context', () => {
+  expect(buttonLabel('ultra')).toBe('🪨 ultra')
   expect(contextFor('off')).toContain('OFF')
   expect(contextFor('ultra')).toContain('"ultra"')
 })
@@ -55,5 +54,27 @@ for (const surface of ['terminal', 'desktop'] as const) {
 
     await ui.press({ key: 'close' })
     expect(await ui.find({ key: 'off' })).toBe(undefined)
+  })
+}
+
+for (const surface of ['terminal', 'desktop'] as const) {
+  test(`footer button shows the mode and toggles the picker (${surface})`, async ($, on) => {
+    mock.store(on)
+    on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
+      const { Box } = $.ui.resolve(e)
+      return <Box key="engine" />
+    })
+    const footer = await $.ui.mount({ plugin: 'caveman-status', surface, component: 'SessionMode', props: { modes: ['focus'] } })
+    const band = await $.ui.mount({ plugin: 'caveman-status', surface, component: 'AbovePrompt', props: BAND })
+
+    await $.command.run({ command: 'cave', args: 'lite' } as never)
+    expect((await footer.find({ key: 'cave' }))?.text).toContain('🪨 lite')
+
+    await footer.press({ key: 'cave' })
+    expect(await band.find({ key: 'ultra' })).toBeDefined()
+
+    await band.press({ key: 'off' })
+    expect((await footer.find({ key: 'cave' }))?.text).toContain('🪨 off')
+    expect(await band.find({ key: 'ultra' })).toBe(undefined)
   })
 }

@@ -1,10 +1,10 @@
 # caveman-status
 
-A Claude Code mod for [caveman mode](https://github.com/JuliusBrussee/caveman): shows the current level in the status line and lets you pick a level or turn it off from a button row.
+A Claude Code mod for [caveman mode](https://github.com/JuliusBrussee/caveman): puts a clickable `🪨 <mode>` button in the prompt footer; click it to pick a level or turn caveman off.
 
 ```
-🪨 full · /cave lite|full|ultra|off          (status line)
-🪨 Caveman: [lite] [● full] [ultra] [off] [✕]   (/cave picker)
+[🪨 full]                                        (footer button, click it)
+🪨 Caveman: [lite] [● full] [ultra] [off] [✕]   (picker above the prompt)
 ```
 
 ## Install
@@ -19,7 +19,7 @@ Pick the user scope so it loads in every session.
 
 | Command | What it does |
 | --- | --- |
-| `/cave` | Opens a picker above the prompt: `lite` `full` `ultra` `off` `✕`. Click one; the current mode is marked `●` |
+| click `🪨` / `/cave` | Opens a picker above the prompt: `lite` `full` `ultra` `off` `✕`. Click one; the current mode is marked `●` |
 | `/cave ultra` | Set a level: `lite`, `full`, `ultra`, `wenyan-lite`, `wenyan-full`, `wenyan-ultra` |
 | `/cave off` | Turn caveman off; Claude replies in normal prose |
 
@@ -29,7 +29,7 @@ The mode is saved, so a new session starts where you left it (default `full`).
 
 ## How it works
 
-- Sets a status line entry with the current mode.
+- Draws a `🪨 <mode>` button at the right of the prompt footer, beside the mode labels. In a terminal, mouse clicks need the fullscreen UI; otherwise use `/cave`.
 - Adds one hidden line of context to each prompt telling Claude the current mode (on at level X, or off), so switching takes effect on the next reply.
 - Works best with the caveman skill installed; with mode `off` it tells Claude to ignore an always-on caveman instruction.
 

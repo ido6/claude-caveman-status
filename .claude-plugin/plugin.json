@@ -1,6 +1,6 @@
 {
   "name": "caveman-status",
-  "version": "0.3.0",
-  "description": "Caveman mode in the status line, with /cave to pick a level or turn it off.",
+  "version": "0.4.0",
+  "description": "Clickable caveman mode button in the prompt footer, with a picker to change level or turn it off.",
   "types": "./types/index.d.ts"
 }

@@ -22,8 +22,7 @@ export const modeFromPrompt = (text: string): string | undefined => {
   return undefined
 }
 
-export const statusText = (mode: string): string =>
-  mode === 'off' ? '🪨 off · /cave to enable' : `🪨 ${mode} · /cave lite|full|ultra|off`
+export const buttonLabel = (mode: string): string => `🪨 ${mode}`
 
 export const contextFor = (mode: string): string =>
   mode === 'off'
@@ -37,7 +36,6 @@ async function readMode($: EngineInterface): Promise<string> {
 async function setMode($: EngineInterface, mode: string): Promise<void> {
   await $.store.set('mode', mode)
   await update($, shownMode, () => mode)
-  $.ui.status(statusText(mode))
 }
 
 async function pick($: EngineInterface, mode: string): Promise<void> {
@@ -56,7 +54,6 @@ export const register: Register = on => {
     })
     const mode = await readMode($)
     await update($, shownMode, () => mode)
-    $.ui.status(statusText(mode))
     return next(e)
   })
 
@@ -103,6 +100,22 @@ export const register: Register = on => {
           />
         ))}
         <Button key="close" label="✕" onPress={() => update($, isPickerOpen, () => false)} />
+      </Box>
+    )
+  })
+
+  on('ui.render', { component: 'SessionMode' }, async ($, e) => {
+    const mode = await read($, shownMode)
+    const { Box, Button, Text } = $.ui.resolve(e)
+
+    return (
+      <Box>
+        {e.props.modes.length > 0 && <Text dimColor>{e.props.modes.join(' & ')} </Text>}
+        <Button
+          key="cave"
+          label={buttonLabel(mode)}
+          onPress={() => update($, isPickerOpen, open => !open)}
+        />
       </Box>
     )
   })
