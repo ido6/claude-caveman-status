@@ -17,7 +17,36 @@ test('reads on/off phrases from prompts', () => {
   expect(modeFromPrompt('normal mode')).toBe('off')
   expect(modeFromPrompt('talk like caveman')).toBe('full')
   expect(modeFromPrompt('fix the bug')).toBe(undefined)
+  expect(modeFromPrompt('Stop caveman.')).toBe('off')
+  expect(modeFromPrompt('please use caveman')).toBe('full')
 })
+
+test('a prompt that only mentions a phrase does not flip the mode', () => {
+  expect(modeFromPrompt('why does caveman mode reset my level?')).toBe(undefined)
+  expect(modeFromPrompt('set the app to normal mode after login')).toBe(undefined)
+  expect(modeFromPrompt('the button should stop caveman text from wrapping')).toBe(undefined)
+})
+
+for (const surface of ['terminal', 'desktop'] as const) {
+  test(`a prompt follows a mode another session saved (${surface})`, async ($, on) => {
+    mock.store(on, { mode: 'ultra' })
+    const sent: { context?: readonly string[] }[] = []
+    on('prompt.submit', ($, e) => {
+      sent.push(e)
+      return { text: e.text } as never
+    })
+    on('ui.render', ($, e) => {
+      const { Box } = $.ui.resolve(e)
+      return <Box key="engine" />
+    })
+    const footer = await $.ui.mount({ plugin: 'caveman-status', surface, component: 'SessionMode', props: { modes: [] } })
+    expect((await footer.find({ key: 'cave' }))?.text).toContain('🪨 full')
+
+    await $.prompt.submit({ text: 'hello', wait: false } as never)
+    expect(sent[0]?.context?.join(' ')).toContain('level "ultra"')
+    expect((await footer.find({ key: 'cave' }))?.text).toContain('🪨 ultra')
+  })
+}
 
 test('formats the footer button and model context', () => {
   expect(buttonLabel('ultra')).toBe('🪨 ultra')

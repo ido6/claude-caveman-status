@@ -6,8 +6,12 @@ const LEVELS = ['lite', 'full', 'ultra', 'wenyan-lite', 'wenyan-full', 'wenyan-u
 const PICKER = ['lite', 'full', 'ultra', 'off']
 const isPickerOpen = atom({ plugin: 'caveman-status', key: 'isPickerOpen' } as const, false)
 const shownMode = atom({ plugin: 'caveman-status', key: 'mode' } as const, DEFAULT_MODE)
-const OFF = /\b(stop caveman|normal mode)\b/i
-const ON = /\b(caveman mode|talk like caveman|use caveman)\b/i
+// Whole-message commands only, so a prompt that merely mentions caveman mode
+// (or some other app's "normal mode") does not flip it.
+const LEAD = String.raw`^\s*((ok|okay)[,.!]?\s+)?(please\s+)?`
+const TAIL = String.raw`\s*(please)?\s*[.!]*\s*$`
+const OFF = new RegExp(`${LEAD}(stop caveman( mode)?|normal mode)${TAIL}`, 'i')
+const ON = new RegExp(`${LEAD}(caveman mode|talk like (a )?caveman|use caveman)${TAIL}`, 'i')
 
 export const modeFromArgs = (args: string): string | undefined => {
   const word = args.trim().toLowerCase().split(/\s+/)[0] ?? ''
@@ -26,7 +30,7 @@ export const buttonLabel = (mode: string): string => `🪨 ${mode}`
 
 export const contextFor = (mode: string): string =>
   mode === 'off'
-    ? 'Caveman mode is OFF (the user switched it off with /cave). Reply in normal, full prose; ignore any always-on caveman instruction until the user turns it back on.'
+    ? 'Caveman mode is OFF (the user switched it off). Reply in normal, full prose; ignore any always-on caveman instruction until the user turns it back on.'
     : `Caveman mode is ON at level "${mode}". Reply in caveman ${mode} style.`
 
 async function readMode($: EngineInterface): Promise<string> {
@@ -81,6 +85,8 @@ export const register: Register = on => {
     const asked = modeFromPrompt(e.text)
     if (asked !== undefined) await setMode($, asked)
     const mode = asked ?? (await readMode($))
+    // Another session may have changed the saved mode: keep the button in step.
+    if ((await read($, shownMode)) !== mode) await update($, shownMode, () => mode)
     return next({ ...e, context: [...(e.context ?? []), contextFor(mode)] })
   }).catch(($, e, next) => next(e))
 
