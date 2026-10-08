@@ -1,8 +1,11 @@
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 const DEFAULT_MODE = 'full'
-const CYCLE = ['lite', 'full', 'ultra', 'off']
 const LEVELS = ['lite', 'full', 'ultra', 'wenyan-lite', 'wenyan-full', 'wenyan-ultra']
+const PICKER = ['lite', 'full', 'ultra', 'off']
+const isPickerOpen = atom({ plugin: 'caveman-status', key: 'isPickerOpen' } as const, false)
+const shownMode = atom({ plugin: 'caveman-status', key: 'mode' } as const, DEFAULT_MODE)
 const OFF = /\b(stop caveman|normal mode)\b/i
 const ON = /\b(caveman mode|talk like caveman|use caveman)\b/i
 
@@ -19,9 +22,6 @@ export const modeFromPrompt = (text: string): string | undefined => {
   return undefined
 }
 
-export const nextInCycle = (mode: string): string =>
-  CYCLE[(CYCLE.indexOf(mode) + 1) % CYCLE.length] ?? DEFAULT_MODE
-
 export const statusText = (mode: string): string =>
   mode === 'off' ? '🪨 off · /cave to enable' : `🪨 ${mode} · /cave lite|full|ultra|off`
 
@@ -36,24 +36,37 @@ async function readMode($: EngineInterface): Promise<string> {
 
 async function setMode($: EngineInterface, mode: string): Promise<void> {
   await $.store.set('mode', mode)
+  await update($, shownMode, () => mode)
   $.ui.status(statusText(mode))
+}
+
+async function pick($: EngineInterface, mode: string): Promise<void> {
+  await setMode($, mode)
+  await update($, isPickerOpen, () => false)
+  $.ui.toast(mode === 'off' ? '🪨 Caveman off' : `🪨 Caveman: ${mode}`)
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'cave',
-      description: 'Set caveman mode (lite, full, ultra, off); no argument cycles',
+      description: 'Pick caveman mode (lite, full, ultra, off); no argument opens a picker',
       argumentHint: '[lite|full|ultra|off]',
       immediate: true,
     })
-    $.ui.status(statusText(await readMode($)))
+    const mode = await readMode($)
+    await update($, shownMode, () => mode)
+    $.ui.status(statusText(mode))
     return next(e)
   })
 
   on('command.run', { command: 'cave' }, async ($, e) => {
     const typed = e.args.trim()
-    const mode = typed === '' ? nextInCycle(await readMode($)) : modeFromArgs(typed)
+    if (typed === '') {
+      await update($, isPickerOpen, () => true)
+      return { text: '🪨 Pick a caveman mode above the prompt.' }
+    }
+    const mode = modeFromArgs(typed)
     if (mode === undefined) {
       return { text: `Unknown level "${typed}". Use: ${[...LEVELS, 'off'].join(', ')}` }
     }
@@ -73,4 +86,24 @@ export const register: Register = on => {
     const mode = asked ?? (await readMode($))
     return next({ ...e, context: [...(e.context ?? []), contextFor(mode)] })
   }).catch(($, e, next) => next(e))
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (!(await read($, isPickerOpen))) return next(e)
+    const current = await read($, shownMode)
+    const { Box, Button, Text } = $.ui.resolve(e)
+
+    return (
+      <Box>
+        <Text>🪨 Caveman: </Text>
+        {PICKER.map(mode => (
+          <Button
+            key={mode}
+            label={mode === current ? `● ${mode}` : mode}
+            onPress={() => pick($, mode)}
+          />
+        ))}
+        <Button key="close" label="✕" onPress={() => update($, isPickerOpen, () => false)} />
+      </Box>
+    )
+  })
 }

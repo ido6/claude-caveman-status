@@ -1,9 +1,10 @@
 # caveman-status
 
-A Claude Code mod for [caveman mode](https://github.com/JuliusBrussee/caveman): shows the current level in the status line and lets you switch level or turn it off with one command.
+A Claude Code mod for [caveman mode](https://github.com/JuliusBrussee/caveman): shows the current level in the status line and lets you pick a level or turn it off from a button row.
 
 ```
-🪨 full · /cave lite|full|ultra|off
+🪨 full · /cave lite|full|ultra|off          (status line)
+🪨 Caveman: [lite] [● full] [ultra] [off] [✕]   (/cave picker)
 ```
 
 ## Install
@@ -18,7 +19,7 @@ Pick the user scope so it loads in every session.
 
 | Command | What it does |
 | --- | --- |
-| `/cave` | Cycle: lite → full → ultra → off → lite |
+| `/cave` | Opens a picker above the prompt: `lite` `full` `ultra` `off` `✕`. Click one; the current mode is marked `●` |
 | `/cave ultra` | Set a level: `lite`, `full`, `ultra`, `wenyan-lite`, `wenyan-full`, `wenyan-ultra` |
 | `/cave off` | Turn caveman off; Claude replies in normal prose |
 
