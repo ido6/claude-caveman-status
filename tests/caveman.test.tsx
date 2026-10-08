@@ -60,7 +60,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
 for (const surface of ['terminal', 'desktop'] as const) {
   test(`footer button shows the mode and toggles the picker (${surface})`, async ($, on) => {
     mock.store(on)
-    on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
+    on('ui.render', ($, e) => {
       const { Box } = $.ui.resolve(e)
       return <Box key="engine" />
     })

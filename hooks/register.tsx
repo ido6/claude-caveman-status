@@ -104,13 +104,14 @@ export const register: Register = on => {
     )
   })
 
-  on('ui.render', { component: 'SessionMode' }, async ($, e) => {
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     const mode = await read($, shownMode)
-    const { Box, Button, Text } = $.ui.resolve(e)
+    const below = await next(e)
+    const { Box, Button } = $.ui.resolve(e)
 
     return (
       <Box>
-        {e.props.modes.length > 0 && <Text dimColor>{e.props.modes.join(' & ')} </Text>}
+        {below}
         <Button
           key="cave"
           label={buttonLabel(mode)}
