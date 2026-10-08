@@ -1,0 +1,5 @@
+{
+  "name": "ido-mods",
+  "owner": { "name": "ido6" },
+  "plugins": [{ "name": "caveman-status", "source": "./" }]
+}
